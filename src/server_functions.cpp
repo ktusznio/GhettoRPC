@@ -62,6 +62,7 @@ char* f2(float a, double b) {
  * the first element in the array indicates the size of the array
  * a: INOUT array 
  */
+/*
 void f3(vector<void *> * a) {
 	
 	int len = *( (int *) a->at(0) );
@@ -78,7 +79,8 @@ void f3(vector<void *> * a) {
 		}
 	}
 }
-/*
+*/
+
 void f3(long a[]) {
 
   int len = a[0];
@@ -94,7 +96,7 @@ void f3(long a[]) {
     }
   }
 }
-*/
+
 /*
  * print file named by a 
  * a: IN array

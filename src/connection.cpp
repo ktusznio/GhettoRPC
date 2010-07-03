@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "include/connection.h"
+#include "include/message.h"
 
 Connection::Connection(const char * addr, const char * p) {
 	

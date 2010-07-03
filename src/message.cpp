@@ -13,7 +13,19 @@
 
 using namespace std;
 
+Message::~Message() {
+	clearArgTypes();
+	clearArgs();
+}
+
+Message::Message() {
+	argTypes = NULL;
+	args = NULL;
+}
+
 Message::Message(const char * src) {
+	argTypes = NULL;
+	args = NULL;
 	memset(&buffer, 0, BUFFER_SIZE);
 	memcpy(&buffer, src, BUFFER_SIZE);
 	parse();
@@ -29,29 +41,107 @@ Message::Message(int t, const char * name, int * pArgTypes) {
 		strcpy(procName, name);	
 	}
 	
-	if (pArgTypes != NULL) {
-		while (*pArgTypes != 0) {
-			argTypes.push_back(*pArgTypes);
-			pArgTypes++;
-		}
-	}
+	copyArgTypes(pArgTypes);
+	
+	args = NULL;
+	numArgs = sizeof(*argTypes) - 1;
 }
 
 Message::Message(int t, const char * name, int * pArgTypes, void ** pArgs) {
 	
-	Message(t, name, pArgTypes);
+	type = t;
 	
-	if (pArgs != NULL) {
-		for (int i = 0; i < argTypes.size(); i++) {
-			args.push_back(*pArgs);
-			pArgs++;
+	if (name != NULL) {
+		// copy name
+		procName = (char *) malloc(strlen(name));
+		strcpy(procName, name);	
+	}
+	
+	copyArgTypes(pArgTypes);
+	numArgs = sizeof(*argTypes) - 1;
+	copyArgs(pArgs);
+}
+
+void Message::copyArgTypes(int * pArgTypes) {
+	argTypes = (int *) malloc(sizeof(int) * sizeof(*pArgTypes));
+	memcpy(argTypes, pArgTypes, sizeof(int) * sizeof(*pArgTypes));
+}
+
+void Message::copyArgs(void ** pArgs) {
+	
+	if (argTypes == NULL) {
+		printf("Message::copyArgs: arg types need to be copied first\n");
+		return;
+	}
+	
+	// create space for pointers that will point to copied args
+	args = (void **) malloc(numArgs * sizeof(void *));
+	
+	// now copy each individual argument and set the pointers
+	for (int i = 0; i < numArgs; i++) {
+		
+		int iType = (argTypes[i] >> 16) & 0xFF;
+		
+		void * q; // the pointer to an arg that will be set
+		
+		switch (iType) {
+			case ARG_CHAR:
+				// allocate space for arg and copy it
+				q = malloc(sizeof(char));
+				memcpy(q, pArgs[i], sizeof(char));
+				break;
+			case ARG_SHORT:
+				q = malloc(sizeof(short));
+				memcpy(q, pArgs[i], sizeof(short));
+				break;
+			case ARG_INT:
+				q = malloc(sizeof(int));
+				memcpy(q, pArgs[i], sizeof(int));
+				break; 
+			case ARG_LONG:
+				q = malloc(sizeof(long));
+				memcpy(q, pArgs[i], sizeof(long));
+				break;
+			case ARG_DOUBLE:
+				q = malloc(sizeof(double));
+				memcpy(q, pArgs[i], sizeof(double));
+				break;
+			case ARG_FLOAT:
+				q = malloc(sizeof(float));
+				memcpy(q, pArgs[i], sizeof(float));
+				break;
+			default:
+				printf("Message::copyArgs: invalid arg type %d\n", iType);
+				break;
 		}
+		
+		// set arg pointer in pointer array
+		args[i] = q;
+	}
+}
+
+void Message::clearArgTypes() {
+	free(argTypes);
+	argTypes = NULL;
+}
+
+void Message::clearArgs() {
+	
+	if (args != NULL) {
+		for (int i = 0; i < numArgs; i++) {
+			free(args[i]);
+			args[i] = NULL;
+		}
+		
+		free(args);
+		args = NULL;		
+		numArgs = 0;
 	}
 }
 
 void Message::parse() {
-	// split message by \n
 	
+	// split message by \n
 	char * p = strtok(buffer, "\n");
 	
 	if (p == NULL) {
@@ -59,10 +149,7 @@ void Message::parse() {
 		return;
 	}
 	
-	printf("received message of type %s\n", p);
-	
-	type = atoi(p);
-	
+	type = atoi(p); // set message type
 	p = strtok(NULL, "\n"); // advance tokenizer
 	
 	// handle different message types
@@ -112,7 +199,6 @@ int Message::readSocket(int s) {
 	
 	if(nbytes == 11) {
 		length = atoi(lenBuffer);
-		printf("message length: %d\n", length);
 	}
 	else {
 		printf("Message::readSocket: error reading message length\n");
@@ -131,12 +217,9 @@ int Message::readSocket(int s) {
 		}
 	} 
 	else {
-		
-		// clear out existing stuff since we're gonna read new stuff in
-		// TODO: clear void * from args properly
-		argTypes.clear();
-		args.clear();
-		
+		// clear out existing stuff and parse new stuff
+		clearArgTypes();
+		clearArgs();
 		parse();
 	}
 	
@@ -179,7 +262,7 @@ int Message::writeSocket(int s) {
 		
 		size_t wrote = send(s, &buffer, strlen(buffer), 0);
 		
-		printf("wrote %d to socket %d\n", (int) wrote, s );
+		printf("Message::writeSocket: wrote %d to socket %d\n", (int) wrote, s );
 		
 		return (int) wrote;
 	}
@@ -192,37 +275,33 @@ int Message::writeSocket(int s) {
 
 void Message::unmarshall(void ** a) {
 
-	void ** p = a;
-	
-	for (int i = 0; i < args.size(); i++) {
+	for (int i = 0; i < numArgs; i++) {
 		
 		int iType = (argTypes[i] >> 16) & 0xFF;
 		
 		switch (iType) {
 			case ARG_CHAR:
-				*((char *) *p) = *((char *) args[i]);
+				*((char *) a[i]) = *((char *) args[i]);
 				break;
 			case ARG_SHORT:
-				*((short *) *p) = *((short *) args[i]);				
+				*((short *) a[i]) = *((short *) args[i]);				
 				break;
 			case ARG_INT:
-				*((int *) *p) = *((int *) args[i]);
+				*((int *) a[i]) = *((int *) args[i]);
 				break; 
 			case ARG_LONG:
-				*((long *) *p) = *((long *) args[i]);
+				*((long *) a[i]) = *((long *) args[i]);
 				break;
 			case ARG_DOUBLE:
-				*((double *) *p) = *((double *) args[i]);
+				*((double *) a[i]) = *((double *) args[i]);
 				break;
 			case ARG_FLOAT:
-				*((float *) *p) = *((float *) args[i]);
+				*((float *) a[i]) = *((float *) args[i]);
 				break;
 			default:
 				printf("rpcCall: invalid arg type %d during unmarshalling\n", iType);
 				break;
 		}
-		
-		p++;
 	}
 }
 
@@ -249,7 +328,6 @@ int Message::fillExecuteBuffer() {
 	argTypesToStream(&os);
 	argsToStream(&os);
 	
-	// write stream to buffer
 	memset(&buffer, 0, BUFFER_SIZE);
 	string str = os.str();
 	sprintf(buffer, "%010d\n%s", (int) str.size(), str.c_str());
@@ -265,7 +343,6 @@ int Message::fillExecuteSuccessBuffer() {
 	argTypesToStream(&os);
 	argsToStream(&os);
 	
-	// write stream to buffer
 	memset(&buffer, 0, BUFFER_SIZE);
 	string str = os.str();
 	sprintf(buffer, "%010d\n%s", (int) str.size(), str.c_str());
@@ -278,7 +355,6 @@ int Message::fillTypeOnly(){
 	
 	typeToStream(&os);
 	
-	// write stream to buffer
 	memset(&buffer, 0, BUFFER_SIZE);
 	string str = os.str();
 	sprintf(buffer, "%010d\n%s", (int) str.size(), str.c_str());
@@ -287,11 +363,11 @@ int Message::fillTypeOnly(){
 }
 
 int Message::fillExecuteFailureBuffer() {
-	return 0;
+	return 0; // TODO
 }
 
 int Message::fillTerminateBuffer() {
-	return 0;
+	return 0; // TODO
 }
 
 int Message::parseRegister(char * p) {
@@ -345,10 +421,8 @@ char * Message::readProcName(char * p) {
 	
 	procName = (char *) malloc(strlen(p));
 	strcpy(procName, p);
-	printf("proc name: %s\n", procName);
 	
 	p = strtok(NULL, "\n");
-	
 	return p;
 }
 
@@ -358,18 +432,28 @@ char * Message::readArgTypes(char * p) {
 		return NULL;
 	}
 	
-	// populate argTypes vector
+	clearArgTypes();
+	
 	int argType;
-	while ((argType = atoi(p)) != 0) {
-		
-		printf("read argType %d\n", argType);
-		
-		argTypes.push_back(argType);
+	vector<int> temp;
+	
+	// read arg types into a vector since we don't know how many there are
+	do {
+		argType = atoi(p);
+		temp.push_back(argType);
 		p = strtok(NULL, "\n");
+	} while (argType != 0);
+	
+	// create argTypes array
+	argTypes = (int *) malloc(temp.size() * sizeof(int));
+	
+	for (int i = 0; i < temp.size(); i++) {
+		argTypes[i] = temp[i];
 	}
 	
-	p = strtok(NULL, "\n"); // skip argType-ending zero
-
+	numArgs = temp.size() - 1;
+	
+	temp.clear();
 	return p;
 }
 
@@ -379,35 +463,39 @@ char * Message::readArgs(char * p) {
 		return NULL;
 	}
 	
+	clearArgs();
+	
+	args = (void **) malloc(numArgs * sizeof(void *));
+	
 	// populate args vector
-	for (int i = 0; i < argTypes.size(); i++) {
+	for (int i = 0; i < numArgs; i++) {
 		void * pArg;
 		int iType = (argTypes[i] >> 16) & 0xFF;
 		
 		switch (iType) {
 			case ARG_CHAR:
-				pArg = malloc(sizeof(char));
-				sprintf((char *) pArg, "%c", *p);
+				args[i] = malloc(sizeof(char));
+				sprintf((char *) args[i], "%c", *p);
 				break;
 			case ARG_SHORT:
-				pArg = malloc(sizeof(short));
-				*((short *) pArg) = atoi(p);
+				args[i] = malloc(sizeof(short));
+				*((short *) args[i]) = atoi(p);
 				break;
 			case ARG_INT:
-				pArg = malloc(sizeof(int));
-				*((int *) pArg) = atoi(p);
+				args[i] = malloc(sizeof(int));
+				*((int *) args[i]) = atoi(p);
 				break;
 			case ARG_LONG:
-				pArg = malloc(sizeof(long));
-				*((long *) pArg) = atol(p);
+				args[i] = malloc(sizeof(long));
+				*((long *) args[i]) = atol(p);
 				break;
 			case ARG_DOUBLE:
-				pArg = malloc(sizeof(double));
-				*((double *) pArg) = atof(p);
+				args[i] = malloc(sizeof(double));
+				*((double *) args[i]) = atof(p);
 				break;
 			case ARG_FLOAT:
-				pArg = malloc(sizeof(float));
-				*((float *) pArg) = strtod(p, NULL);
+				args[i] = malloc(sizeof(float));
+				*((float *) args[i]) = strtod(p, NULL);
 				break;
 			default:
 				printf("Message::parseExecuteMsg: invalid arg type %d\n", iType);
@@ -415,7 +503,6 @@ char * Message::readArgs(char * p) {
 				break;
 		}
 		
-		args.push_back(pArg);
 		p = strtok(NULL, "\n");
 	}
 	
@@ -431,14 +518,14 @@ void Message::typeToStream(ostringstream * os) {
 }
 
 void Message::argTypesToStream(ostringstream * os) {
-	for(int i = 0; i <= argTypes.size(); i++) {
+	for(int i = 0; i <= numArgs; i++) {
 		*os << argTypes[i] << endl;
 	}
 }
 
 void Message::argsToStream(ostringstream * os) {
 	
-	for (int i = 0; i < args.size(); i++) {
+	for (int i = 0; i < numArgs; i++) {
 		
 		int argType = (argTypes[i] >> 16) & 0xFF;
 		
@@ -477,21 +564,27 @@ void Message::argsToStream(ostringstream * os) {
 }
 
 void Message::print() {
-	printf("Message: (type = %d)\n%s\n", type, buffer);
+	printf("Message: (type = %d)\n", type);
 	printArgTypes();
 	printArgs();
 }
 
 void Message::printArgTypes() {
 	printf("argTypes:\n");
-	for (int i = 0; i < argTypes.size(); i++) {
-		printf("\t%d: %d\n", i, argTypes.at(i));
+	for (int i = 0; i <= numArgs; i++) {
+		printf("\t%d: %d\n", i, argTypes[i]);
 	}
 }
 
 void Message::printArgs() {
+	if (args == NULL) {
+		printf("args: none\n");
+		return;
+	}
+	
 	printf("args:\n");
-	for (int i = 0; i < args.size(); i++) {
+	
+	for (int i = 0; i < numArgs; i++) {
 		
 		int iType = (argTypes[i] >> 16) & 0xFF;
 		
@@ -520,8 +613,6 @@ void Message::printArgs() {
 		}
 	}
 }
-
-// argTypes[i]: io000000 tttttttt llllllll llllllll
 
 /*
  int in, out, type, len;

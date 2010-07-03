@@ -2,7 +2,6 @@
 #define _message_included
 
 #include <string>
-#include <vector>
 #include <sstream>
 
 #define BUFFER_SIZE         1024
@@ -47,6 +46,12 @@ private:
 	void argTypesToStream(std::ostringstream * os);
 	void argsToStream(std::ostringstream * os);
 	
+	void copyArgTypes(int * pArgTypes);
+	void copyArgs(void ** pArgs);
+
+	void clearArgTypes();
+	void clearArgs();
+	
 public:
 	int length;
 	int type;
@@ -57,17 +62,18 @@ public:
 	
 	// execute
 	char * procName;
-	std::vector<int> argTypes;
-	std::vector<void *> args;
+	int numArgs;
+	int * argTypes;
+	void ** args;
 	
 	// execute failure
 	int reasonCode;
 	
-	Message(){};
+	~Message();
+	Message();
 	Message(const char * src);
 	Message(int t, const char * name, int * argTypes);
 	Message(int t, const char * name, int * argTypes, void ** args);
-	
 	
 	int readSocket(int s);
 	int writeSocket(int s);

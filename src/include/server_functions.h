@@ -18,8 +18,7 @@ long f1(char a, short b, int c, long d); /* returns: OUT; a, b, c, d: IN */
 
 //char* f2(float a, double b);             /* return: OUT array of char; a, b: IN */
 				     
-//void f3(long a[]);                       /* a: INOUT array */
-void f3(std::vector<void *> * a);
-
+void f3(long a[]);                       /* a: INOUT array */
+//void f3(std::vector<void *> * a);
 
 

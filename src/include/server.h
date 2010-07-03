@@ -22,7 +22,7 @@ private:
 
 public:
 	
-	std::map<std::string, pProcSkel> procMap;
+	std::map<std::string, function> procMap;
 	
 	Server();
 	

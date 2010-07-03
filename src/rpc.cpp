@@ -21,19 +21,19 @@
 
 // TODO: get rid of PORT_NUM
 #define PORT_NUM "38447"
+#define	SERVER_PORT	"53797"
 
 using namespace std;
 
 int connectToBinder() {
-	
-	// set up socket connection to binder
-	Connection conn("192.168.0.199", PORT_NUM);
+	Connection conn("127.0.0.1", PORT_NUM);
 	return conn.create();
 }
 
 int rpcCall(const char * name, int * argTypes, void ** args) {
-		
-	int iSocket = connectToBinder();
+	
+	Connection conn("127.0.0.1", SERVER_PORT);
+	int iSocket = conn.create();
 	
 	// send message
 	Message m(M_EXECUTE, name, argTypes, args);	
@@ -50,8 +50,7 @@ int rpcCall(const char * name, int * argTypes, void ** args) {
 	return 0;
 }
 
-int rpcRegister(const char* name, int* argTypes, pProcSkel f) {
-	
+int rpcRegister(const char* name, int* argTypes, function f) {
 	
 	int iSocket = connectToBinder();
 	

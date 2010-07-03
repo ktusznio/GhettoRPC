@@ -48,15 +48,15 @@ void Server::handleExecute(int s, Message * m) {
 	
 	int ret;
 	int cmp;
-	pProcSkel pSkel;
-	map<string, pProcSkel>::iterator it;
+	function pSkel;
+	map<string, function>::iterator it;
 	
 	it = procMap.find(m->procName);
 	
 	if (it != procMap.end()) {
 		
 		pSkel = it->second;
-		ret = (*pSkel)(&m->argTypes, &m->args);
+		ret = (*pSkel)(m->argTypes, m->args);
 		
 		printf("skel return: %d\n", ret);
 		printf("output arg set to: %d\n", *(int *)m->args[0]);

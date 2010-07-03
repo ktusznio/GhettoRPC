@@ -12,8 +12,8 @@
 #include <vector>
 
 #include "message.h"
+#include "rpc.h"
 
-typedef int (*pProcSkel)(std::vector<int> *, std::vector<void *> *);
 
 class Server {
 private:

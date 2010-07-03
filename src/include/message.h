@@ -12,6 +12,8 @@
 #define M_EXECUTE_SUCCESS	3
 #define M_EXECUTE_FAILURE	4
 #define M_TERMINATE			5
+#define M_REGISTER_SUCCESS	6
+#define M_REGISTER_FAILURE	7
 
 #define M_READ_PROCNAME_ERROR	1
 #define M_READ_ARGTYPES_ERROR	2
@@ -29,6 +31,7 @@ private:
 	int parseExecuteFailure(char * p);
 	int parseTerminate(char * p);
 	
+	int fillTypeOnly();
 	int fillRegisterBuffer();
 	int fillExecuteBuffer();
 	int fillExecuteSuccessBuffer();
@@ -62,7 +65,9 @@ public:
 	
 	Message(){};
 	Message(const char * src);
+	Message(int t, const char * name, int * argTypes);
 	Message(int t, const char * name, int * argTypes, void ** args);
+	
 	
 	int readSocket(int s);
 	int writeSocket(int s);

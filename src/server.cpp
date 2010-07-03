@@ -14,15 +14,26 @@
 #include "include/server_function_skels.h"
 #include "include/message.h"
 #include "include/connection.h"
+#include "include/rpc.h"
 
 using namespace std;
 
 Server::Server() {
+	
+	//TODO should be handled in register
 	// populate procMap
 	procMap["f0"] = f0_Skel;
 	procMap["f1"] = f1_Skel;
 	procMap["f2"] = f2_Skel;
 	procMap["f3"] = f3_Skel;
+	
+	int argTypes[4];
+	argTypes[0] = (1 << ARG_OUTPUT) | (ARG_LONG << 16) | 255;
+	argTypes[1] = (1 << ARG_INPUT) | (ARG_INT << 16);
+	argTypes[2] = (1 << ARG_INPUT) | (ARG_INT << 16);
+	argTypes[3] = 0;
+	
+	rpcRegister("f0", argTypes, f0_Skel);
 }
 
 void Server::handleTerminate(int s, Message * m) {
@@ -30,6 +41,8 @@ void Server::handleTerminate(int s, Message * m) {
 }
 
 void Server::handleExecute(int s, Message * m) {
+	
+	//TODO should be handled in rpcExecute
 	
 	printf("EXECUTE %s\n", m->procName);
 	
@@ -53,7 +66,7 @@ void Server::handleExecute(int s, Message * m) {
 			m->writeSocket(s);
 		}
 		else {
-			// TODO: return EXECUTE_FAILURE message
+			// TODO: return error message
 		}
 	}
 	else {
@@ -61,6 +74,7 @@ void Server::handleExecute(int s, Message * m) {
 	}
 	
 	// TODO: test rest of server functions
+	// TODO: send EXECUTE_SUCCESS message
 }
 
 int Server::run() {
@@ -164,6 +178,9 @@ int Server::run() {
 	
 	// keep track of the biggest file descriptor
 	fdmax = serverSocket;
+	
+	char buffer[BUFFER_SIZE];
+	int clientSocket;
 	
 	struct sockaddr_storage remoteaddr; // client address
 	socklen_t addrlen;

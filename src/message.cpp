@@ -19,7 +19,7 @@ Message::Message(const char * src) {
 	parse();
 }
 
-Message::Message(int t, const char * name, int * pArgTypes, void ** pArgs) {
+Message::Message(int t, const char * name, int * pArgTypes) {
 	
 	type = t;
 	
@@ -35,6 +35,11 @@ Message::Message(int t, const char * name, int * pArgTypes, void ** pArgs) {
 			pArgTypes++;
 		}
 	}
+}
+
+Message::Message(int t, const char * name, int * pArgTypes, void ** pArgs) {
+	
+	Message(t, name, pArgTypes);
 	
 	if (pArgs != NULL) {
 		for (int i = 0; i < argTypes.size(); i++) {
@@ -76,6 +81,10 @@ void Message::parse() {
 			break;
 		case M_EXECUTE_FAILURE:
 			parseResult = parseExecuteFailure(p);
+			break;
+		case M_REGISTER_SUCCESS:
+		case M_REGISTER_FAILURE:
+			parseResult = 0; //TODO
 			break;
 		case M_TERMINATE:
 			parseResult = 0; // nothing to do here
@@ -154,6 +163,10 @@ int Message::writeSocket(int s) {
 		case M_TERMINATE:
 			fillResult = fillTerminateBuffer();
 			break;
+		case M_REGISTER_SUCCESS:
+		case M_REGISTER_FAILURE:
+			fillResult = fillTypeOnly();
+			break;		
 		default:
 			printf("Message::writeSocket: invalid message type\n");
 			fillResult = -1;
@@ -214,6 +227,17 @@ void Message::unmarshall(void ** a) {
 }
 
 int Message::fillRegisterBuffer() {
+	ostringstream os;
+	
+	typeToStream(&os);
+	procNameToStream(&os);
+	argTypesToStream(&os);
+	
+	// write stream to buffer
+	memset(&buffer, 0, BUFFER_SIZE);
+	string str = os.str();
+	sprintf(buffer, "%010d\n%s", (int) str.size(), str.c_str());
+	
 	return 0;
 }
 
@@ -249,6 +273,19 @@ int Message::fillExecuteSuccessBuffer() {
 	return 0;	
 }
 
+int Message::fillTypeOnly(){
+	ostringstream os;
+	
+	typeToStream(&os);
+	
+	// write stream to buffer
+	memset(&buffer, 0, BUFFER_SIZE);
+	string str = os.str();
+	sprintf(buffer, "%010d\n%s", (int) str.size(), str.c_str());
+	
+	return 0;	
+}
+
 int Message::fillExecuteFailureBuffer() {
 	return 0;
 }
@@ -258,17 +295,10 @@ int Message::fillTerminateBuffer() {
 }
 
 int Message::parseRegister(char * p) {
-	if (readProcName(p) != 0) return -1;
-	if (readArgTypes(p) != 0) return -1;
+	p = readProcName(p);
+	p = readArgTypes(p);
 	
-	// TODO: read ip and port
-	
-	// read ip
-	if (p == NULL) {
-		
-	}
-	
-	// read port
+	printArgTypes();
 	
 	return 0;
 }

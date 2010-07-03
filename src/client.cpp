@@ -45,7 +45,7 @@ int Client::run() {
 	printf("rpcCall returned %d\n", s);
 	
 	printf("a=%d, b=%d, ret=%ld\n", a, b, ret);
-	
+
 	return 0;
 }
 

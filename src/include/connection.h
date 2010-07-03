@@ -9,11 +9,6 @@
 #define SOCKET_ERROR        -1
 
 class Connection {
-private:
-	fd_set master; // master file descriptor list 
-	fd_set read_fds; // temp file descriptor list for select()
-	
-	
 	
 public:
 	int iSocket;
@@ -25,9 +20,6 @@ public:
 	Connection(const char * addr, const char * port);
 	
 	int create();
-	int createListener();
-	
-	void listen(int s);
 };
 
 #endif

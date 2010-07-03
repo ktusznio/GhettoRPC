@@ -20,15 +20,20 @@
 #define SOCKET_ERROR        -1
 
 // TODO: get rid of PORT_NUM
-#define PORT_NUM "50605"
+#define PORT_NUM "38447"
 
 using namespace std;
 
-int rpcCall(const char * name, int * argTypes, void ** args) {
+int connectToBinder() {
 	
-	// set up socket connection
-	Connection conn("127.0.0.1", PORT_NUM);
-	int iSocket = conn.create();
+	// set up socket connection to binder
+	Connection conn("192.168.0.199", PORT_NUM);
+	return conn.create();
+}
+
+int rpcCall(const char * name, int * argTypes, void ** args) {
+		
+	int iSocket = connectToBinder();
 	
 	// send message
 	Message m(M_EXECUTE, name, argTypes, args);	
@@ -45,7 +50,38 @@ int rpcCall(const char * name, int * argTypes, void ** args) {
 	return 0;
 }
 
-int rpcRegister(char* name, int* argTypes, function f) {
+int rpcRegister(const char* name, int* argTypes, pProcSkel f) {
+	
+	
+	int iSocket = connectToBinder();
+	
+	//TODO map skeleton function to server procedure
+	//
+	//
+	
+	// send message
+	Message m(M_REGISTER, name, argTypes);
+	printf("in rpcRegister...\n");
+	m.print();
+	int wrote = m.writeSocket(iSocket);
+	
+	// read response
+	m.readSocket(iSocket);
+		
+	if(m.type == M_REGISTER_SUCCESS)
+	{
+		printf("Registration successful\n");
+	}
+	else
+	{
+		printf("Registration failed\n");
+	}
+	
+	close(iSocket);
+	
+	// unmarshall and set results
+	//m.unmarshall(args);
+	
 	return 0;
 }
 

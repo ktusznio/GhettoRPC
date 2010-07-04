@@ -8,9 +8,13 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
+#include <string>
+#include <sstream>
 
 #include "include/connection.h"
 #include "include/message.h"
+
+using namespace std;
 
 Connection::Connection(const char * addr, const char * p) {
 	
@@ -45,7 +49,6 @@ Connection::Connection(const char * addr, const char * p) {
 	//printf("SERVER_ADDRESS %s\nSERVER_PORT %d\n", hostname, port);
 }
 
-// 
 int Connection::create() {
 	
 	// get server address info

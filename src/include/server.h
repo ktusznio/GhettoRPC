@@ -14,14 +14,13 @@
 #include "message.h"
 #include "rpc.h"
 
-
 class Server {
 private:
 	void handleExecute(int s, Message * m);
 	void handleTerminate(int s, Message * m);
+	void registerProcs();
 
 public:
-	
 	std::map<std::string, function> procMap;
 	
 	Server();

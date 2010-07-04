@@ -14,6 +14,10 @@
 #define ARG_INPUT   31
 #define ARG_OUTPUT  30
 
+// TODO: remove hard-coded ports
+#define BINDER_PORT "38447"
+#define	SERVER_PORT	"53797"
+
 typedef int (*function)(int *, void **);
 
 int rpcCall(const char* name, int* argTypes, void** args);

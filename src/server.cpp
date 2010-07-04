@@ -18,14 +18,18 @@
 
 using namespace std;
 
+string serverAddr;
+int serverPort;
+
 Server::Server() {
-	
-	//TODO should be handled in register
 	// populate procMap
 	procMap["f0"] = f0_Skel;
 	procMap["f1"] = f1_Skel;
 	procMap["f2"] = f2_Skel;
 	procMap["f3"] = f3_Skel;
+}
+
+void Server::registerProcs() {
 	
 	int argTypes[4];
 	argTypes[0] = (1 << ARG_OUTPUT) | (ARG_LONG << 16) | 255;
@@ -34,6 +38,8 @@ Server::Server() {
 	argTypes[3] = 0;
 	
 	rpcRegister("f0", argTypes, f0_Skel);
+	
+	// TODO: register rest of procs
 }
 
 void Server::handleTerminate(int s, Message * m) {
@@ -42,7 +48,7 @@ void Server::handleTerminate(int s, Message * m) {
 
 void Server::handleExecute(int s, Message * m) {
 	
-	//TODO should be handled in rpcExecute
+	// TODO: port to rpcExecute
 	
 	printf("EXECUTE %s\n", m->procName);
 	
@@ -78,9 +84,8 @@ void Server::handleExecute(int s, Message * m) {
 }
 
 int Server::run() {
-	
 	// TODO: break this up so it can be reused in binder
-
+	
 	fd_set master, // master file descriptor list
 	read_fds; // temp file descriptor list for select()
 	int fdmax; // maximum file descriptor number
@@ -108,7 +113,8 @@ int Server::run() {
 	}
 	h_addr.s_addr = *((unsigned long *) host->h_addr_list[0]);
 	
-	printf("SERVER_ADDRESS %s\n", inet_ntoa(h_addr));
+	serverAddr = inet_ntoa(h_addr);
+	printf("SERVER_ADDRESS %s\n", serverAddr.c_str());
 	
 	// bind socket
 	
@@ -157,7 +163,8 @@ int Server::run() {
 		return -1;
 	}
 	
-	printf("SERVER_PORT %d\n", (int) ntohs(sa.sin_port));
+	serverPort = (int) ntohs(sa.sin_port);
+	printf("SERVER_PORT %d\n", serverPort);
 	
 	if (p == NULL) {
 		// if we got here, it means we didn't get bound
@@ -166,6 +173,9 @@ int Server::run() {
 	}
 	
 	freeaddrinfo(ai); // all done with this
+	
+	// register procs with binder before main loop
+	registerProcs();
 	
 	// establish listen queue
     if(listen(serverSocket, 10) == SOCKET_ERROR) {
@@ -228,7 +238,7 @@ int Server::run() {
 					else {
 						
 						// TODO: threading
-											
+						
 						switch (req.type) {
 							case M_EXECUTE:
 								handleExecute(i, &req);
@@ -237,12 +247,12 @@ int Server::run() {
 							case M_TERMINATE:
 								handleTerminate(i, &req);
 								break;
-
+								
 							default:
 								printf("Invalid message type %d\n", req.type);
 								break;
 						}
-												
+						
 						// close socket
 						if(close(i) == SOCKET_ERROR) {
 							printf("\nCould not close socket\n");

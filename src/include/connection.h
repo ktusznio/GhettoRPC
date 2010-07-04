@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include <string>
+
 #define HOST_NAME_SIZE      255
 #define SOCKET_ERROR        -1
 
@@ -18,7 +20,7 @@ public:
 	struct addrinfo * servInfo;
 	
 	Connection(const char * addr, const char * port);
-	
+
 	int create();
 };
 

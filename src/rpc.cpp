@@ -19,19 +19,16 @@
 #define HOST_NAME_SIZE      255
 #define SOCKET_ERROR        -1
 
-// TODO: get rid of PORT_NUM
-#define PORT_NUM "38447"
-#define	SERVER_PORT	"53797"
-
 using namespace std;
 
-int connectToBinder() {
-	Connection conn("127.0.0.1", PORT_NUM);
-	return conn.create();
-}
+extern string serverAddr; 
+extern int serverPort;
 
 int rpcCall(const char * name, int * argTypes, void ** args) {
 	
+	// TODO: connect to binder to get server info
+	
+	// connect to server
 	Connection conn("127.0.0.1", SERVER_PORT);
 	int iSocket = conn.create();
 	
@@ -41,7 +38,7 @@ int rpcCall(const char * name, int * argTypes, void ** args) {
 	
 	// read response
 	m.readSocket(iSocket);
-		
+	
 	close(iSocket);
 	
 	// unmarshall and set results
@@ -52,13 +49,19 @@ int rpcCall(const char * name, int * argTypes, void ** args) {
 
 int rpcRegister(const char* name, int* argTypes, function f) {
 	
-	int iSocket = connectToBinder();
+	Connection conn("127.0.0.1", BINDER_PORT);
+	int iSocket = conn.create();
 	
+
 	//TODO map skeleton function to server procedure
 	//
 	//
 	
-	// send message
+	// send message	
+	// TODO: send over serverAddr, serverPort
+	
+	printf("serverAddr=%s, serverPort=%d\n", serverAddr.c_str(), serverPort);
+	
 	Message m(M_REGISTER, name, argTypes);
 	printf("in rpcRegister...\n");
 	m.print();

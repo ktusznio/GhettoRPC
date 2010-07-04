@@ -3,8 +3,8 @@ CC = g++
 
 BIN = ../bin
 LIB = ../lib
-RPC_BINS = $(BIN)/rpc.o $(BIN)/message.o $(BIN)/connection.o
-SERVER_BINS = $(BIN)/message.o $(BIN)/connection.o $(BIN)/server_functions.o $(BIN)/server_function_skels.o 
+RPC_BINS = $(BIN)/rpc.o $(BIN)/message.o $(BIN)/connection.o $(BIN)/handlers.o
+SERVER_BINS = $(BIN)/server_functions.o $(BIN)/server_function_skels.o 
 BINDER_BINS = $(BIN)/message.o $(BIN)/connection.o
 
 all: rpc client server binder
@@ -15,11 +15,14 @@ message:
 connection:
 	$(CC) -c -o $(BIN)/connection.o connection.cpp
 	
+handlers:
+	$(CC) -c -o $(BIN)/handlers.o handlers.cpp
+	
 server_functions:
 	$(CC) -c -o $(BIN)/server_functions.o server_functions.cpp
 	$(CC) -c -o $(BIN)/server_function_skels.o server_function_skels.cpp
 
-rpc: message connection
+rpc: message connection handlers
 	$(CC) -c -o $(BIN)/rpc.o rpc.cpp
 	ar rc $(LIB)/librpc.a $(RPC_BINS)
 	ranlib $(LIB)/librpc.a
@@ -27,7 +30,7 @@ rpc: message connection
 client: rpc
 	$(CC) -o $(BIN)/client client.cpp $(LIB)/librpc.a
 
-server: message connection server_functions rpc
+server: server_functions rpc
 	$(CC) -o $(BIN)/server $(SERVER_BINS) server.cpp $(LIB)/librpc.a
 	
 binder: message connection
@@ -35,3 +38,4 @@ binder: message connection
 	
 clean:
 	rm $(BIN)/*
+	rm $(LIB)/*

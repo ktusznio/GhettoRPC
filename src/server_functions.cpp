@@ -25,6 +25,9 @@ long f1(char a, short b, int c, long d) {
 /* return string is the concatenation of the integer 
    part of the float and the interger part of the double
    return: OUT string; a, b: IN */
+
+// TODO
+
 /*
 char* f2(float a, double b) {
 

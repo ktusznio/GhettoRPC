@@ -12,41 +12,12 @@
 #include <sstream>
 
 #include "include/connection.h"
-#include "include/message.h"
 
 using namespace std;
 
 Connection::Connection(const char * addr, const char * p) {
-	
-	// TODO: get rid of hard-coded address and port
-	
-	// read server address
-	/*
-	const char * envServerAddr = getenv("SERVER_ADDRESS");
-	if(envServerAddr == NULL) {
-		printf("SERVER_ADDRESS not set, setting to localhost\n");
-		envServerAddr = "localhost";
-	}
-	*/
-	
-	
-	// read server port
-	/*
-	 const char * envServerPort = getenv("SERVER_PORT");
-	 
-	 if(envServerPort == NULL)
-	 {
-	 printf("SERVER_PORT not set, setting to 50957\n");
-	 envServerPort = "57825";
-	 }
-	 
-	 int hostPort = atoi(envServerPort);
-	 */
-	
 	strcpy(hostname, addr);
 	strcpy(port, p);
-	
-	//printf("SERVER_ADDRESS %s\nSERVER_PORT %d\n", hostname, port);
 }
 
 int Connection::create() {
@@ -68,6 +39,7 @@ int Connection::create() {
 	struct addrinfo * p;
 	
 	// create the socket and connect
+	
 	for(p = servInfo; p != NULL; p = p->ai_next) {
 		if ((iSocket = socket(p->ai_family, p->ai_socktype,
 							  p->ai_protocol)) == -1) {
